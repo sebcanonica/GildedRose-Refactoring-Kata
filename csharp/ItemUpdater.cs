@@ -1,4 +1,6 @@
-﻿namespace csharp
+﻿using System;
+
+namespace csharp
 {
     class ItemUpdaterFactory
     {
@@ -7,141 +9,141 @@
         private const string BACKSTAGE_PASS = "Backstage passes to a TAFKAL80ETC concert";
         private const string CONJURED_PREFIX = "Conjured";
 
-        internal static ItemUpdater Create(Item item)
+        internal static AbstractItemUpdater Create(Item item)
         {
-            switch (item.Name)
+            if (item.Name != null)
             {
-                case AGED_BRIE:
+                if (item.Name == AGED_BRIE)
                     return new AgedBrieUpdater(item);
-                case SULFURAS:
+                else if (item.Name == SULFURAS)
                     return new SulfurasUpdater(item);
-                case BACKSTAGE_PASS:
+                else if (item.Name == BACKSTAGE_PASS)
                     return new BackstagePassUpdater(item);
-                default:
-                    if (item.Name != null && item.Name.StartsWith(CONJURED_PREFIX))
-                        return new ConjuredUpdater(item);
-                    else
-                        return new ItemUpdater(item);
+                else if (item.Name.StartsWith(CONJURED_PREFIX))
+                    return new ConjuredUpdater(item);
             }
+            return new StandardItemUpdater(item);
         }
     }
 
-    class ItemUpdater
+    abstract class AbstractItemUpdater
     {
         protected Item _item;
 
-        internal ItemUpdater(Item item)
+        internal AbstractItemUpdater(Item item)
         {
             _item = item;
         }
 
         public void UpdateItem()
         {
-            UpdateItemQuality();
-
-            UpdateItemSellIn();
-
-            if (_item.SellIn < 0)
+            if (_item.SellIn > 0 )
             {
-                AdjustOutdatedItemQuality();
+                UpdateFreshItemQuality();
             }
-        }
-
-        protected virtual void UpdateItemQuality()
-        {
-            LowerQuality();
-        }
-
-        protected virtual void UpdateItemSellIn()
-        {
-            _item.SellIn = _item.SellIn - 1;
-        }
-
-        protected virtual void AdjustOutdatedItemQuality()
-        {
-            LowerQuality();
-        }                
-
-        protected void LowerQuality()
-        {
-            if (_item.Quality > 0)
+            else
             {
-                _item.Quality = _item.Quality - 1;
+                UpdateObsoleteItemQuality();
             }
+
+            UpdateItemSellIn();            
         }
 
-        protected void RaiseQuality()
+        protected abstract void UpdateFreshItemQuality();
+
+        protected abstract void UpdateObsoleteItemQuality();
+
+        protected abstract void UpdateItemSellIn();
+
+        protected void LowerQuality(int loss)
         {
-            if (_item.Quality < 50)
-            {
-                _item.Quality = _item.Quality + 1;
-            }
+            _item.Quality = Math.Max(0, _item.Quality - loss);
+            
+        }
+
+        protected void RaiseQuality(int gain)
+        {
+            _item.Quality = Math.Min(50, _item.Quality + gain);            
         }
     }
 
-    class AgedBrieUpdater : ItemUpdater
+
+    class StandardItemUpdater : AbstractItemUpdater
+    {
+        internal StandardItemUpdater(Item item) : base(item) { }        
+
+        protected override void UpdateFreshItemQuality()
+        {
+            LowerQuality(1);
+        }
+
+        protected override void UpdateObsoleteItemQuality()
+        {
+            LowerQuality(2);
+        }
+
+        protected override void UpdateItemSellIn()
+        {
+            _item.SellIn = _item.SellIn - 1;
+        }              
+    }
+
+    class AgedBrieUpdater : StandardItemUpdater
     {
         internal AgedBrieUpdater(Item item) : base(item) { }
 
-        protected override void UpdateItemQuality()
+        protected override void UpdateFreshItemQuality()
         {
-            RaiseQuality();
+            RaiseQuality(1);
         }
 
-        protected override void AdjustOutdatedItemQuality()
+        protected override void UpdateObsoleteItemQuality()
         {
-            RaiseQuality();
+            RaiseQuality(2);
         }
     }
 
-    class SulfurasUpdater : ItemUpdater
+    class SulfurasUpdater : AbstractItemUpdater
     {
         internal SulfurasUpdater(Item item) : base(item) { }
 
-        protected override void UpdateItemQuality() { }
+        protected override void UpdateFreshItemQuality() { }
+
+        protected override void UpdateObsoleteItemQuality() { }
 
         protected override void UpdateItemSellIn() { }
-
-        protected override void AdjustOutdatedItemQuality() { }
     }
 
-    class BackstagePassUpdater : ItemUpdater
+    class BackstagePassUpdater : StandardItemUpdater
     {
         internal BackstagePassUpdater(Item item) : base(item) { }
 
-        protected override void UpdateItemQuality() {
-            RaiseQuality();
-
-            if (_item.SellIn < 11)
-            {
-                RaiseQuality();
-            }
-
+        protected override void UpdateFreshItemQuality() {
             if (_item.SellIn < 6)
-            {
-                RaiseQuality();
-            }
+                RaiseQuality(3);
+            else if (_item.SellIn < 11)
+                RaiseQuality(2);
+            else
+                RaiseQuality(1);            
         }
 
-        protected override void AdjustOutdatedItemQuality() {
+        protected override void UpdateObsoleteItemQuality() {
             _item.Quality = 0;
         }
     }
 
-    internal class ConjuredUpdater : ItemUpdater
+    class ConjuredUpdater : StandardItemUpdater
     {
-        public ConjuredUpdater(Item item) : base(item) { }
+        internal ConjuredUpdater(Item item) : base(item) { }
 
-        protected override void UpdateItemQuality()
+        protected override void UpdateFreshItemQuality()
         {
-            base.UpdateItemQuality();
-            base.UpdateItemQuality();
+            LowerQuality(2);
         }
 
-        protected override void AdjustOutdatedItemQuality()
+        protected override void UpdateObsoleteItemQuality()
         {
-            base.AdjustOutdatedItemQuality();
-            base.AdjustOutdatedItemQuality();
+            LowerQuality(4);
         }
     }
 }

@@ -5,6 +5,7 @@
         private const string AGED_BRIE = "Aged Brie";
         private const string SULFURAS = "Sulfuras, Hand of Ragnaros";
         private const string BACKSTAGE_PASS = "Backstage passes to a TAFKAL80ETC concert";
+        private const string CONJURED_PREFIX = "Conjured";
 
         internal static ItemUpdater Create(Item item)
         {
@@ -17,7 +18,10 @@
                 case BACKSTAGE_PASS:
                     return new BackstagePassUpdater(item);
                 default:
-                    return new ItemUpdater(item);
+                    if (item.Name != null && item.Name.StartsWith(CONJURED_PREFIX))
+                        return new ConjuredUpdater(item);
+                    else
+                        return new ItemUpdater(item);
             }
         }
     }
@@ -121,6 +125,23 @@
 
         protected override void AdjustOutdatedItemQuality() {
             _item.Quality = 0;
+        }
+    }
+
+    internal class ConjuredUpdater : ItemUpdater
+    {
+        public ConjuredUpdater(Item item) : base(item) { }
+
+        protected override void UpdateItemQuality()
+        {
+            base.UpdateItemQuality();
+            base.UpdateItemQuality();
+        }
+
+        protected override void AdjustOutdatedItemQuality()
+        {
+            base.AdjustOutdatedItemQuality();
+            base.AdjustOutdatedItemQuality();
         }
     }
 }

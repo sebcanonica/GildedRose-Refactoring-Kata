@@ -121,5 +121,15 @@ namespace csharp
             app.UpdateQuality();
             Check.That(items[0].Quality).IsEqualTo(0);
         }
+
+        [TestCase(10,18)]
+        [TestCase(0, 16)]
+        public void Should_degrade_conjured_items_twice_as_fast(int daysLeft, int finalQuality)
+        {
+            var items = new List<Item> { new Item { Name = "Conjured thing", SellIn = daysLeft, Quality = 20 } };
+            var app = new GildedRose(items);
+            app.UpdateQuality();
+            Check.That(items[0].Quality).IsEqualTo(finalQuality);
+        }
     }
 }

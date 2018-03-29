@@ -14,21 +14,9 @@ namespace csharp
         {
             foreach (var item in Items )
             {
-                UpdateItem(item);
+                var itemUpdater = ItemUpdaterFactory.Create(item);
+                itemUpdater.UpdateItem();
             }
-        }
-
-        private static void UpdateItem(Item item)
-        {
-            var itemUpdater = ItemUpdaterFactory.Create(item);
-            itemUpdater.UpdateItemQuality();
-
-            itemUpdater.UpdateItemSellIn();
-
-            if (item.SellIn < 0)
-            {
-                itemUpdater.AdjustOutdatedItemQuality();
-            }
-        }        
+        }       
     }
 }

@@ -1,21 +1,12 @@
 ﻿namespace csharp
 {
-    interface IItemUpdater
-    {
-        void UpdateItemQuality();
-
-        void UpdateItemSellIn();
-
-        void AdjustOutdatedItemQuality();
-    }
-
     class ItemUpdaterFactory
     {
         private const string AGED_BRIE = "Aged Brie";
         private const string SULFURAS = "Sulfuras, Hand of Ragnaros";
         private const string BACKSTAGE_PASS = "Backstage passes to a TAFKAL80ETC concert";
 
-        internal static IItemUpdater Create(Item item)
+        internal static ItemUpdater Create(Item item)
         {
             switch (item.Name)
             {
@@ -26,31 +17,43 @@
                 case BACKSTAGE_PASS:
                     return new BackstagePassUpdater(item);
                 default:
-                    return new StandardUpdater(item);
+                    return new ItemUpdater(item);
             }
         }
     }
 
-    class StandardUpdater : IItemUpdater
+    class ItemUpdater
     {
         protected Item _item;
 
-        internal StandardUpdater(Item item)
+        internal ItemUpdater(Item item)
         {
             _item = item;
         }
 
-        public virtual void UpdateItemQuality()
+        public void UpdateItem()
+        {
+            UpdateItemQuality();
+
+            UpdateItemSellIn();
+
+            if (_item.SellIn < 0)
+            {
+                AdjustOutdatedItemQuality();
+            }
+        }
+
+        protected virtual void UpdateItemQuality()
         {
             LowerQuality();
         }
 
-        public virtual void UpdateItemSellIn()
+        protected virtual void UpdateItemSellIn()
         {
             _item.SellIn = _item.SellIn - 1;
         }
 
-        public virtual void AdjustOutdatedItemQuality()
+        protected virtual void AdjustOutdatedItemQuality()
         {
             LowerQuality();
         }                
@@ -72,37 +75,37 @@
         }
     }
 
-    class AgedBrieUpdater : StandardUpdater
+    class AgedBrieUpdater : ItemUpdater
     {
         internal AgedBrieUpdater(Item item) : base(item) { }
 
-        public override void UpdateItemQuality()
+        protected override void UpdateItemQuality()
         {
             RaiseQuality();
         }
 
-        public override void AdjustOutdatedItemQuality()
+        protected override void AdjustOutdatedItemQuality()
         {
             RaiseQuality();
         }
     }
 
-    class SulfurasUpdater : StandardUpdater
+    class SulfurasUpdater : ItemUpdater
     {
         internal SulfurasUpdater(Item item) : base(item) { }
 
-        public override void UpdateItemQuality() { }
+        protected override void UpdateItemQuality() { }
 
-        public override void UpdateItemSellIn() { }
+        protected override void UpdateItemSellIn() { }
 
-        public override void AdjustOutdatedItemQuality() { }
+        protected override void AdjustOutdatedItemQuality() { }
     }
 
-    class BackstagePassUpdater : StandardUpdater
+    class BackstagePassUpdater : ItemUpdater
     {
         internal BackstagePassUpdater(Item item) : base(item) { }
 
-        public override void UpdateItemQuality() {
+        protected override void UpdateItemQuality() {
             RaiseQuality();
 
             if (_item.SellIn < 11)
@@ -116,7 +119,7 @@
             }
         }
 
-        public override void AdjustOutdatedItemQuality() {
+        protected override void AdjustOutdatedItemQuality() {
             _item.Quality = 0;
         }
     }
